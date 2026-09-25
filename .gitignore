@@ -36,3 +36,12 @@ docker-data/
 # Temporary files
 tmp/
 temp/
+
+# Prisma generated client
+/apps/api/src/generated/
+
+# Local AI/editor tooling
+/apps/api/.windsurf/
+/apps/api/.claude/
+/apps/api/.agents/
+/apps/api/skills-lock.json
