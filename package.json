@@ -1,0 +1,15 @@
+{
+  "name": "marnyx",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MARNYX - AI workspace platform",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  }
+}
