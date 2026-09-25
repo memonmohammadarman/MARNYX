@@ -1,5 +1,6 @@
 import express from "express";
 import healthRouter from "./routes/health.routes.js";
+import databaseRouter from "./routes/database.routes.js";
 
 const app = express();
 
@@ -11,10 +12,11 @@ app.get("/", (_req, res) => {
   res.status(200).json({
     name: "MARNYX API",
     status: "running",
-    version: "0.1.0"
+    version: "0.1.0",
   });
 });
 
 app.use("/api", healthRouter);
+app.use("/api", databaseRouter);
 
 export default app;
