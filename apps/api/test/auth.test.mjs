@@ -351,3 +351,30 @@ test("API responses include security headers", async () => {
     "same-origin",
   );
 });
+
+test("malformed JSON receives a centralized 400 error", async () => {
+  const response = await request("/api/auth/register", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: '{"email":"broken",',
+  });
+
+  assert.equal(response.status, 400);
+
+  const body = await json(response);
+
+  assert.deepEqual(body, {
+    error: "Invalid JSON payload",
+  });
+});
+
+test("unknown routes return JSON instead of the default HTML error page", async () => {
+  const response = await request("/api/this-route-does-not-exist");
+
+  assert.equal(response.status, 404);
+
+  const contentType = response.headers.get("content-type") ?? "";
+  assert.match(contentType, /^application\/json/);
+});

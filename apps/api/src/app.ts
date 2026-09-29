@@ -3,6 +3,7 @@ import healthRouter from "./routes/health.routes.js";
 import databaseRouter from "./routes/database.routes.js";
 import { securityHeaders } from "./middleware/security-headers.js";
 import authRouter from "./modules/auth/routes/auth.routes.js";
+import { errorHandler } from "./middleware/error-handler.js";
 
 const app = express();
 
@@ -23,5 +24,13 @@ app.get("/", (_req, res) => {
 app.use("/api", healthRouter);
 app.use("/api", databaseRouter);
 app.use("/api/auth", authRouter);
+
+app.use((_request, response) => {
+  response.status(404).json({
+    error: "Route not found",
+  });
+});
+
+app.use(errorHandler);
 
 export default app;
