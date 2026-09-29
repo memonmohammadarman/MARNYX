@@ -351,6 +351,14 @@ test("API responses include security headers", async () => {
     response.headers.get("cross-origin-resource-policy"),
     "same-origin",
   );
+
+  const hsts = response.headers.get("strict-transport-security");
+
+  if (ENV.NODE_ENV === "production") {
+    assert.equal(hsts, "max-age=31536000");
+  } else {
+    assert.equal(hsts, null);
+  }
 });
 
 test("malformed JSON receives a centralized 400 error", async () => {

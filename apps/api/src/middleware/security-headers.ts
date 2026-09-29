@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { ENV } from "../config/env.js";
 
 export function securityHeaders(
   _request: Request,
@@ -10,6 +11,13 @@ export function securityHeaders(
   response.setHeader("Referrer-Policy", "no-referrer");
   response.setHeader("Cross-Origin-Opener-Policy", "same-origin");
   response.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+
+  if (ENV.NODE_ENV === "production") {
+    response.setHeader(
+      "Strict-Transport-Security",
+      "max-age=31536000",
+    );
+  }
 
   next();
 }
