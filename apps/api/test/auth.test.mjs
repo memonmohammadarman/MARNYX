@@ -415,3 +415,48 @@ test("environment configuration is validated and available", async () => {
     ["development", "test", "production"].includes(ENV.NODE_ENV),
   );
 });
+
+test("API responses include a unique request ID", async () => {
+  const firstResponse = await request("/");
+  const secondResponse = await request("/");
+
+  const firstRequestId = firstResponse.headers.get("x-request-id");
+  const secondRequestId = secondResponse.headers.get("x-request-id");
+
+  assert.equal(firstResponse.status, 200);
+  assert.equal(secondResponse.status, 200);
+
+  assert.ok(firstRequestId);
+  assert.ok(secondRequestId);
+  assert.notEqual(firstRequestId, secondRequestId);
+
+  assert.match(
+    firstRequestId,
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+  );
+
+  assert.match(
+    secondRequestId,
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+  );
+});
+
+test("error responses also include a request ID", async () => {
+  const response = await request("/api/this-route-does-not-exist");
+
+  assert.equal(response.status, 404);
+
+  const requestIdHeader = response.headers.get("x-request-id");
+
+  assert.ok(requestIdHeader);
+  assert.match(
+    requestIdHeader,
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+  );
+
+  const body = await json(response);
+
+  assert.deepEqual(body, {
+    error: "Route not found",
+  });
+});

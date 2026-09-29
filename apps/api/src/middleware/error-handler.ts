@@ -28,7 +28,10 @@ export const errorHandler: ErrorRequestHandler = (
       : 500;
 
   if (status >= 500) {
-    console.error("Unhandled API error:", error);
+    console.error("Unhandled API error:", {
+      requestId: response.locals.requestId,
+      error,
+    });
   }
 
   return response.status(status).json({

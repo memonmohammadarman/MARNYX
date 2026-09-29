@@ -4,12 +4,14 @@ import databaseRouter from "./routes/database.routes.js";
 import { securityHeaders } from "./middleware/security-headers.js";
 import authRouter from "./modules/auth/routes/auth.routes.js";
 import { errorHandler } from "./middleware/error-handler.js";
+import { requestId } from "./middleware/request-id.js";
 
 const app = express();
 
 app.disable("x-powered-by");
 
 app.use(securityHeaders);
+app.use(requestId);
 
 app.use(express.json({ limit: "100kb" }));
 
