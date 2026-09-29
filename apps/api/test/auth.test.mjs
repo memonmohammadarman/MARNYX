@@ -460,3 +460,13 @@ test("error responses also include a request ID", async () => {
     error: "Route not found",
   });
 });
+
+test("Express trust proxy uses the validated environment setting", async () => {
+  const { ENV } = await import("../dist/config/env.js");
+  const configuredTrustProxy = app.get("trust proxy");
+
+  const expectedTrustProxy =
+    ENV.TRUST_PROXY_HOPS === 0 ? false : ENV.TRUST_PROXY_HOPS;
+
+  assert.equal(configuredTrustProxy, expectedTrustProxy);
+});
