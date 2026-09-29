@@ -11,7 +11,7 @@ app.disable("x-powered-by");
 
 app.use(securityHeaders);
 
-app.use(express.json());
+app.use(express.json({ limit: "100kb" }));
 
 app.get("/", (_req, res) => {
   res.status(200).json({

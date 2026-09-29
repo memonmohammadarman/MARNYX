@@ -378,3 +378,25 @@ test("unknown routes return JSON instead of the default HTML error page", async 
   const contentType = response.headers.get("content-type") ?? "";
   assert.match(contentType, /^application\/json/);
 });
+
+test("oversized JSON payloads are rejected", async () => {
+  const response = await request("/api/auth/register", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      email: "large-payload@marnyx.local",
+      password: "MARNYX-Large-Payload-123",
+      name: "x".repeat(120 * 1024),
+    }),
+  });
+
+  assert.equal(response.status, 413);
+
+  const body = await json(response);
+
+  assert.deepEqual(body, {
+    error: "Request failed",
+  });
+});
