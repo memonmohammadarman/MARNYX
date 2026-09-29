@@ -1,11 +1,14 @@
 import express from "express";
 import healthRouter from "./routes/health.routes.js";
 import databaseRouter from "./routes/database.routes.js";
+import { securityHeaders } from "./middleware/security-headers.js";
 import authRouter from "./modules/auth/routes/auth.routes.js";
 
 const app = express();
 
 app.disable("x-powered-by");
+
+app.use(securityHeaders);
 
 app.use(express.json());
 
