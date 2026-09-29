@@ -1,6 +1,7 @@
 import express from "express";
 import healthRouter from "./routes/health.routes.js";
 import databaseRouter from "./routes/database.routes.js";
+import authRouter from "./modules/auth/routes/auth.routes.js";
 
 const app = express();
 
@@ -18,5 +19,6 @@ app.get("/", (_req, res) => {
 
 app.use("/api", healthRouter);
 app.use("/api", databaseRouter);
+app.use("/api/auth", authRouter);
 
 export default app;
