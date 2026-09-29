@@ -2,6 +2,11 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import app from "../dist/app.js";
 import { prisma } from "../dist/db/prisma.js";
+import {
+  loginRateLimiter,
+  registerRateLimiter,
+} from "../dist/modules/auth/auth.rate-limit.js";
+
 
 let server;
 let baseUrl;
@@ -231,4 +236,101 @@ test("POST /api/auth/logout works without a session", async () => {
   });
 
   assert.equal(response.status, 204);
+});
+
+async function resetLimiter(limiter) {
+  await limiter.resetKey("127.0.0.1");
+}
+
+test("login rate limiter returns 429 after five failed attempts", async () => {
+  await resetLimiter(loginRateLimiter);
+
+  const successfulLogin = await request("/api/auth/login", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      email: testEmail,
+      password: testPassword,
+    }),
+  });
+
+  assert.equal(successfulLogin.status, 200);
+
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    const response = await request("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        email: testEmail,
+        password: "MARNYX-Wrong-Password-123",
+      }),
+    });
+
+    assert.equal(response.status, 401);
+  }
+
+  const limitedResponse = await request("/api/auth/login", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      email: testEmail,
+      password: "MARNYX-Wrong-Password-123",
+    }),
+  });
+
+  assert.equal(limitedResponse.status, 429);
+  assert.ok(limitedResponse.headers.get("ratelimit"));
+  assert.ok(limitedResponse.headers.get("retry-after"));
+
+  const body = await json(limitedResponse);
+
+  assert.deepEqual(body, {
+    error: "Too many authentication attempts, please try again later",
+  });
+});
+
+test("register rate limiter returns 429 after five invalid attempts", async () => {
+  await resetLimiter(registerRateLimiter);
+
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    const response = await request("/api/auth/register", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        email: "not-an-email",
+        password: "short",
+      }),
+    });
+
+    assert.equal(response.status, 400);
+  }
+
+  const limitedResponse = await request("/api/auth/register", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      email: "not-an-email",
+      password: "short",
+    }),
+  });
+
+  assert.equal(limitedResponse.status, 429);
+  assert.ok(limitedResponse.headers.get("ratelimit"));
+  assert.ok(limitedResponse.headers.get("retry-after"));
+
+  const body = await json(limitedResponse);
+
+  assert.deepEqual(body, {
+    error: "Too many authentication attempts, please try again later",
+  });
 });
