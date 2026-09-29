@@ -93,3 +93,11 @@ export async function revokeSession(token: string): Promise<void> {
     },
   });
 }
+
+export async function revokeSessionById(sessionId: string): Promise<void> {
+  await prisma.session.deleteMany({
+    where: {
+      id: sessionId,
+    },
+  });
+}

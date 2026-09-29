@@ -13,7 +13,10 @@ import {
 } from "../cookie.service.js";
 import { requireAuth } from "../auth.middleware.js";
 import { readSessionToken } from "../cookie.reader.js";
-import { revokeSession } from "../services/session.service.js";
+import {
+  revokeSession,
+  revokeSessionById,
+} from "../services/session.service.js";
 
 const router = Router();
 
@@ -97,6 +100,19 @@ router.post("/logout", async (req, res, next) => {
       await revokeSession(token);
     }
 
+    clearSessionCookie(res);
+
+    return res.status(204).send();
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post("/revoke-session", requireAuth, async (_req, res, next) => {
+  try {
+    const session = res.locals.session;
+
+    await revokeSessionById(session.id);
     clearSessionCookie(res);
 
     return res.status(204).send();
