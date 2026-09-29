@@ -3,7 +3,14 @@ import {
   registerUser,
   RegistrationError,
 } from "../services/registration.service.js";
-import { setSessionCookie, clearSessionCookie } from "../cookie.service.js";
+import {
+  loginUser,
+  LoginError,
+} from "../services/login.service.js";
+import {
+  setSessionCookie,
+  clearSessionCookie,
+} from "../cookie.service.js";
 import { requireAuth } from "../auth.middleware.js";
 import { readSessionToken } from "../cookie.reader.js";
 import { revokeSession } from "../services/session.service.js";
@@ -31,6 +38,35 @@ router.post("/register", async (req, res, next) => {
       if (error.code === "EMAIL_EXISTS") {
         return res.status(409).json({
           error: "An account with this email already exists",
+        });
+      }
+    }
+
+    return next(error);
+  }
+});
+
+router.post("/login", async (req, res, next) => {
+  try {
+    const result = await loginUser(req.body);
+
+    setSessionCookie(res, result.token);
+
+    return res.status(200).json({
+      user: result.user,
+      session: result.session,
+    });
+  } catch (error) {
+    if (error instanceof LoginError) {
+      if (error.code === "VALIDATION_ERROR") {
+        return res.status(400).json({
+          error: "Invalid login data",
+        });
+      }
+
+      if (error.code === "INVALID_CREDENTIALS") {
+        return res.status(401).json({
+          error: "Invalid email or password",
         });
       }
     }
