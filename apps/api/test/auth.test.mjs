@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import app from "../dist/app.js";
 import { prisma } from "../dist/db/prisma.js";
+import { ENV } from "../dist/config/env.js";
 import {
   loginRateLimiter,
   registerRateLimiter,
@@ -476,4 +477,101 @@ test("API responses disable caching", async () => {
 
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("cache-control"), "no-store");
+});
+
+
+test("session cookie has the required security attributes", async () => {
+  const email = `cookie-flags-${Date.now()}@marnyx.local`;
+
+  await registerRateLimiter.resetKey("127.0.0.1");
+
+  try {
+    const response = await request("/api/auth/register", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password: "MARNYX-Cookie-Flags-123",
+        name: "Cookie Flags Test",
+      }),
+    });
+
+    assert.equal(response.status, 201);
+
+    const setCookie = response.headers.get("set-cookie");
+
+    assert.ok(setCookie, "Expected Set-Cookie header");
+    assert.match(setCookie, /^marnyx_session=[^;]+;/i);
+    assert.match(setCookie, /;\s*Max-Age=2592000(?:;|$)/i);
+    assert.match(setCookie, /;\s*Path=\/(?:;|$)/i);
+    assert.match(setCookie, /;\s*HttpOnly(?:;|$)/i);
+    assert.match(setCookie, /;\s*SameSite=Lax(?:;|$)/i);
+
+    if (ENV.NODE_ENV === "production") {
+      assert.match(setCookie, /;\s*Secure(?:;|$)/i);
+    } else {
+      assert.doesNotMatch(setCookie, /;\s*Secure(?:;|$)/i);
+    }
+  } finally {
+    await prisma.user.deleteMany({
+      where: {
+        email,
+      },
+    });
+  }
+});
+
+test("logout clears the session cookie with security attributes", async () => {
+  const email = `cookie-logout-${Date.now()}@marnyx.local`;
+
+  await registerRateLimiter.resetKey("127.0.0.1");
+
+  try {
+    const registerResponse = await request("/api/auth/register", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password: "MARNYX-Cookie-Logout-123",
+        name: "Cookie Logout Test",
+      }),
+    });
+
+    assert.equal(registerResponse.status, 201);
+
+    const cookie = getCookie(registerResponse);
+
+    const logoutResponse = await request("/api/auth/logout", {
+      method: "POST",
+      headers: {
+        cookie,
+      },
+    });
+
+    assert.equal(logoutResponse.status, 204);
+
+    const setCookie = logoutResponse.headers.get("set-cookie");
+
+    assert.ok(setCookie, "Expected clearing Set-Cookie header");
+    assert.match(setCookie, /^marnyx_session=;/i);
+    assert.match(setCookie, /;\s*Path=\/(?:;|$)/i);
+    assert.match(setCookie, /;\s*HttpOnly(?:;|$)/i);
+    assert.match(setCookie, /;\s*SameSite=Lax(?:;|$)/i);
+
+    if (ENV.NODE_ENV === "production") {
+      assert.match(setCookie, /;\s*Secure(?:;|$)/i);
+    } else {
+      assert.doesNotMatch(setCookie, /;\s*Secure(?:;|$)/i);
+    }
+  } finally {
+    await prisma.user.deleteMany({
+      where: {
+        email,
+      },
+    });
+  }
 });
