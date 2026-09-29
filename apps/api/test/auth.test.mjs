@@ -400,3 +400,18 @@ test("oversized JSON payloads are rejected", async () => {
     error: "Request failed",
   });
 });
+
+test("environment configuration is validated and available", async () => {
+  const { ENV } = await import("../dist/config/env.js");
+
+  assert.equal(typeof ENV.DATABASE_URL, "string");
+  assert.ok(ENV.DATABASE_URL.length > 0);
+
+  assert.equal(Number.isInteger(ENV.PORT), true);
+  assert.ok(ENV.PORT >= 1);
+  assert.ok(ENV.PORT <= 65535);
+
+  assert.ok(
+    ["development", "test", "production"].includes(ENV.NODE_ENV),
+  );
+});
