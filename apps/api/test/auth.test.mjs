@@ -470,3 +470,10 @@ test("Express trust proxy uses the validated environment setting", async () => {
 
   assert.equal(configuredTrustProxy, expectedTrustProxy);
 });
+
+test("API responses disable caching", async () => {
+  const response = await request("/");
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+});

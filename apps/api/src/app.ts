@@ -5,6 +5,7 @@ import { securityHeaders } from "./middleware/security-headers.js";
 import authRouter from "./modules/auth/routes/auth.routes.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { requestId } from "./middleware/request-id.js";
+import { noStore } from "./middleware/no-store.js";
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.disable("x-powered-by");
 
 app.use(securityHeaders);
 app.use(requestId);
+app.use(noStore);
 
 app.use(express.json({ limit: "100kb" }));
 
