@@ -12,6 +12,7 @@ import {
   clearSessionCookie,
 } from "../cookie.service.js";
 import { requireAuth } from "../auth.middleware.js";
+import { loginRateLimiter, registerRateLimiter } from "../auth.rate-limit.js";
 import { readSessionToken } from "../cookie.reader.js";
 import {
   revokeSession,
@@ -20,7 +21,7 @@ import {
 
 const router = Router();
 
-router.post("/register", async (req, res, next) => {
+router.post("/register", registerRateLimiter, async (req, res, next) => {
   try {
     const result = await registerUser(req.body);
 
@@ -49,7 +50,7 @@ router.post("/register", async (req, res, next) => {
   }
 });
 
-router.post("/login", async (req, res, next) => {
+router.post("/login", loginRateLimiter, async (req, res, next) => {
   try {
     const result = await loginUser(req.body);
 
