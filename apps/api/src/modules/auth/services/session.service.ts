@@ -56,7 +56,7 @@ export async function findSessionByToken(token: string) {
   }
 
   if (session.expiresAt <= new Date()) {
-    await prisma.session.delete({
+    await prisma.session.deleteMany({
       where: {
         id: session.id,
       },
@@ -68,15 +68,20 @@ export async function findSessionByToken(token: string) {
   return session;
 }
 
-export async function touchSession(sessionId: string): Promise<void> {
-  await prisma.session.update({
+export async function touchSession(sessionId: string): Promise<boolean> {
+  const result = await prisma.session.updateMany({
     where: {
       id: sessionId,
+      expiresAt: {
+        gt: new Date(),
+      },
     },
     data: {
       lastUsedAt: new Date(),
     },
   });
+
+  return result.count === 1;
 }
 
 export async function revokeSession(token: string): Promise<void> {

@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { prisma } from "../../db/prisma.js";
 import { findSessionFromRequest } from "./session.lookup.js";
+import { touchSession } from "./services/session.service.js";
 
 export async function requireAuth(
   request: Request,
@@ -31,6 +32,15 @@ export async function requireAuth(
     });
 
     if (!user) {
+      response.status(401).json({
+        error: "Authentication required",
+      });
+      return;
+    }
+
+    const sessionStillValid = await touchSession(session.id);
+
+    if (!sessionStillValid) {
       response.status(401).json({
         error: "Authentication required",
       });
